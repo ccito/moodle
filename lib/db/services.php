@@ -965,6 +965,14 @@ $functions = array(
         'description' => 'Update completion status for the current user in an activity, only for activities with manual tracking.',
         'type'        => 'write',
     ),
+
+    // Rating functions.
+    'core_rating_get_item_ratings' => array(
+        'classname'   => 'core_rating_external',
+        'methodname'  => 'get_item_ratings',
+        'description' => 'Retrieving all the ratings for an item.',
+        'type'        => 'read',
+    ),
 );
 
 $services = array(
@@ -1023,7 +1031,8 @@ $services = array(
             'core_user_remove_user_device',
             'core_course_get_courses',
             'core_completion_update_activity_completion_status_manually',
-            'mod_data_get_databases_by_courses'
+            'mod_data_get_databases_by_courses',
+            'core_rating_get_item_ratings'
             ),
         'enabled' => 0,
         'restrictedusers' => 0,
