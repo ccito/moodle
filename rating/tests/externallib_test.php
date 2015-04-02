@@ -65,6 +65,8 @@ class core_rating_externallib_testcase extends externallib_advanced_testcase {
         // Set Aggregate type = Average of ratings.
         $record->assessed = RATING_AGGREGATE_AVERAGE;
         $forum = self::getDataGenerator()->create_module('forum', $record);
+        
+
 
         // Add discussion to the forums.
         $record = new stdClass();
@@ -72,6 +74,7 @@ class core_rating_externallib_testcase extends externallib_advanced_testcase {
         $record->userid = $student->id;
         $record->forum = $forum->id;
         $discussion = self::getDataGenerator()->get_plugin_generator('mod_forum')->create_discussion($record);
+        $discussioncontextid = context_module::instance($discussion->id)->id;
 
         // Rete the discussion as teacher1.
         $rating1 = new stdClass();
@@ -99,7 +102,7 @@ class core_rating_externallib_testcase extends externallib_advanced_testcase {
         $rating2->timemodified = time();
         $rating2->id = $DB->insert_record('rating', (array) $rating2);
 
-        $ratings = core_rating_external::get_item_ratings_returns('module', $course->id, 'mod_forum', 'post', $discussion->id, 100);
+        $ratings = core_rating_external::get_item_ratings('module', $discussioncontextid, 'mod_forum', 'post', $discussion->id, 100, '');
         // We need to execute the return values cleaning process to simulate the web service server.
         $ratings = external_api::clean_returnvalue(core_rating_external::get_item_ratings_returns(), $ratings);
         $this->assertEquals(2, count($ratings['ratings']));
