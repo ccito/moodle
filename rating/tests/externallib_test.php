@@ -65,8 +65,6 @@ class core_rating_externallib_testcase extends externallib_advanced_testcase {
         // Set Aggregate type = Average of ratings.
         $record->assessed = RATING_AGGREGATE_AVERAGE;
         $forum = self::getDataGenerator()->create_module('forum', $record);
-        
-
 
         // Add discussion to the forums.
         $record = new stdClass();
@@ -111,8 +109,8 @@ class core_rating_externallib_testcase extends externallib_advanced_testcase {
         foreach ($ratings['ratings'] as $rating) {
             $indexedratings[$rating->id] = $rating;
         }
-        $this->assertEquals($rating1->rating.' / '.$rating1->scaleid, count($indexedratings[$rating1]['rating']));
-        $this->assertEquals($rating2->rating.' / '.$rating2->scaleid, count($indexedratings[$rating2]['rating']));
+        $this->assertEquals($rating1->rating.' / '.$rating1->scaleid, $indexedratings[$rating1]['rating']);
+        $this->assertEquals($rating2->rating.' / '.$rating2->scaleid, $indexedratings[$rating2]['rating']);
 
         $this->assertEquals(fullname($rating1), $indexedratings[$rating1]['fullname']);
         $this->assertEquals(fullname($rating2), $indexedratings[$rating2]['fullname']);
