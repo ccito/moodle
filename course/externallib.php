@@ -2122,6 +2122,172 @@ class core_course_external extends external_api {
         );
     }
 
+    /**
+     * Returns description of method parameters
+     *
+     * @return external_function_parameters
+     * @since Moodle 3.0
+     */
+    public static function search_courses_parameters() {
+        return new external_function_parameters(
+            array(
+                'criterianame'  => new external_value(PARAM_ALPHA, 'criteria name (search, modulelist, blocklist, tagid)'),
+                'criteriavalue' => new external_value(PARAM_RAW,   'criteria value'),
+                'page'          => new external_value(PARAM_INT,   'page number (0 based)', VALUE_DEFAULT, 0),
+                'perpage'       => new external_value(PARAM_INT,   'items per page', VALUE_DEFAULT, 0)
+            )
+        );
+    }
+    /**
+     * Search courses
+     *
+     * @param $criterianame
+     * @param $criteriavalue
+     * @param $page
+     * @param $perpage
+     * @return array courses ()
+     * @since Moodle 3.0
+     * @throws moodle_exception
+     */
+    public static function search_courses($criterianame, $criteriavalue, $page=0, $perpage=0) {
+
+        global $CFG;
+        require_once("$CFG->libdir/coursecatlib.php");
+
+        $params = self::validate_parameters(self::search_courses_parameters(),
+            array(
+            'criterianame'  => $criterianame,
+            'criteriavalue' => $criteriavalue,
+            'page'          => $page,
+            'perpage'       => $perpage
+        ));
+
+        $allowedcriterianames = array('search', 'modulelist', 'blocklist', 'tagid');
+        if (!in_array($params['criterianame'], $allowedcriterianames)) {
+            throw new invalid_parameter_exception('Invalid value for criterianame parameter (value: '.$params['criterianame'].'),' .
+                'allowed values are: '.implode(',', $allowedcriterianames));
+        }
+
+        $paramtype = array('search' => PARAM_TEXT, 'modulelist' => PARAM_PLUGIN, 'blocklist' => PARAM_INT, 'tagid' => PARAM_INT);
+        $params['criteriavalue'] = clean_param($params['criteriavalue'], $paramtype[$params['criterianame']]);
+
+        $searchcriteria[$params['criterianame']] = $params['criteriavalue'];
+        $options = array();
+        if ($params['perpage'] != 0) {
+            // Default number of courses per page.
+            if ($params['perpage'] < 0) {
+                $params['perpage'] = $CFG->coursesperpage;
+            }
+            $offset = $params['page'] * $params['perpage'];
+            $options = array('offset' => $offset, 'limit' => $params['perpage']);
+        }
+
+        $courses = coursecat::search_courses($searchcriteria, $options);
+
+        $results = array();
+        $categories = array();
+        foreach ($courses as $course) {
+
+            $coursecontext = context_course::instance($course->id, IGNORE_MISSING);
+            $coursereturns = array();
+            $files = array();
+            foreach ($course->get_course_overviewfiles() as $file) {
+                $fileurl = moodle_url::make_webservice_pluginfile_url(
+                    $file->get_contextid(), $file->get_component(), $file->get_filearea(), null,
+                    $file->get_filepath(), $file->get_filename())->out(false);
+                $files[] = array('filename' => $file->get_filename(), 'fileurl' => $fileurl);
+            }
+            $contactusername = array();
+            foreach ($course->get_course_contacts() as $contact) {
+                $user = $contact['user'];
+                $usercontext = context_user::instance($user->id, IGNORE_MISSING);
+                if ($usercontext) {
+                    $userpictureurl = moodle_url::make_webservice_pluginfile_url(
+                    $usercontext->id, 'user', 'icon', null, '/', 'f1')->out(false);
+                } else {
+                    $userpictureurl = '';
+                }
+                $contactusername[] = array('userid' => $user->id,
+                                           'username' => $contact['username'],
+                                           'userpictureurl' => $userpictureurl);
+            }
+            if (!isset($categories[$course->category])) {
+                $categories[$course->category] = coursecat::get($course->category, IGNORE_MISSING);
+            }
+            $category = $categories[$course->category];
+            $enroltypes = array();
+            $instances = enrol_get_instances($course->id, true);
+            foreach ($instances as $instance) {
+                $enroltypes[] = array('enrollmentmethod' => $instance->enrol);
+            }
+            list($summary, $summaryformat) =
+                external_format_text($course->summary, $course->summaryformat, $coursecontext->id, 'course', 'summary', null);
+            $coursereturns['id']                = $course->id;
+            $coursereturns['fullname']          = $course->fullname;
+            $coursereturns['shortname']         = $course->shortname;
+            $coursereturns['categoryid']        = $course->category;
+            $coursereturns['categoryname']      = $category->name;
+            $coursereturns['summary']           = $summary;
+            $coursereturns['summaryformat']     = $summaryformat;
+            $coursereturns['overviewfiles']     = $files;
+            $coursereturns['contacts']          = $contactusername;
+            $coursereturns['enrollmentmethods'] = $enroltypes;
+            $results[] = $coursereturns;
+        }
+        $totalcount = coursecat::search_courses_count($searchcriteria);
+
+        return array('total' => $totalcount, 'courses' => $results);
+    }
+
+    /**
+     * Returns description of method result value
+     *
+     * @return external_description
+     * @since Moodle 3.0
+     */
+    public static function search_courses_returns() {
+
+        return new external_single_structure(
+            array(
+                'total' => new external_value(PARAM_INT, 'total course count'),
+                'courses' => new external_multiple_structure(
+                    new external_single_structure(
+                        array(
+                            'id' => new external_value(PARAM_INT, 'course id'),
+                            'fullname' => new external_value(PARAM_TEXT, 'course full name'),
+                            'shortname' => new external_value(PARAM_TEXT, 'course short name'),
+                            'categoryid' => new external_value(PARAM_INT, 'category id'),
+                            'categoryname' => new external_value(PARAM_TEXT, 'category name'),
+                            'summary' => new external_value(PARAM_RAW, 'summary'),
+                            'summaryformat' => new external_format_value('summary'),
+                            'overviewfiles' => new external_multiple_structure(
+                                new external_single_structure(
+                                    array('filename' => new external_value(PARAM_RAW, 'overview file name'),
+                                          'fileurl'  => new external_value(PARAM_URL, 'overview file url')
+                                )),
+                                    'additional overview files attached to this course'
+                             ),
+                            'contacts' => new external_multiple_structure(
+                                new external_single_structure(
+                                    array('userid' => new external_value(PARAM_INT, 'contact user id'),
+                                          'username'  => new external_value(PARAM_RAW, 'contact user fullname'),
+                                          'userpictureurl'  =>
+                                              new external_value(PARAM_URL, 'contact user picture url', VALUE_OPTIONAL)
+                                )),
+                                    'contact users'
+                             ),
+                             'enrollmentmethods' => new external_multiple_structure(
+                                new external_single_structure(
+                                    array('enrollmentmethod' => new external_value(PARAM_ALPHANUMEXT, 'enrollment method')
+                                )),
+                                    'enrollment methods list'
+                             ),
+                        )
+                    ), 'course'
+                )
+            )
+        );
+    }
 }
 
 /**
