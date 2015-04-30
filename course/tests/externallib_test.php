@@ -599,6 +599,55 @@ class core_course_externallib_testcase extends externallib_advanced_testcase {
     }
 
     /**
+     * Test search_courses
+     */
+    public function test_search_courses () {
+
+        global $DB, $CFG;
+        require_once($CFG->dirroot . '/tag/lib.php');
+
+        $this->resetAfterTest(true);
+        $this->setAdminUser();
+        $generatedcourses = array();
+        $coursedata1['fullname'] = 'FIRST COURSE';
+        $course1  = self::getDataGenerator()->create_course($coursedata1);
+        $coursedata2['fullname'] = 'SECOND COURSE';
+        $course2  = self::getDataGenerator()->create_course($coursedata2);
+        // Search by name.
+        $results = core_course_external::search_courses('search', 'FIRST');
+        $results = external_api::clean_returnvalue(core_course_external::search_courses_returns(), $results);
+        $this->assertEquals($coursedata1['fullname'], $results['courses'][0]['fullname']);
+
+        // Create the forum.
+        $record = new stdClass();
+        $record->introformat = FORMAT_HTML;
+        $record->course = $course2->id;
+        // Set Aggregate type = Average of ratings.
+        $forum = self::getDataGenerator()->create_module('forum', $record);
+
+        // Search by module.
+        $results = core_course_external::search_courses('modulelist', 'forum');
+        $results = external_api::clean_returnvalue(core_course_external::search_courses_returns(), $results);
+        $this->assertEquals(1, $results['total']);
+
+        // Enable coursetag option.
+        set_config('block_tags_showcoursetags', true);
+        // Add tag 'TAG-LABEL ON SECOND COURSE' to Course2.
+        tag_set('course', $course2->id, array('TAG-LABEL ON SECOND COURSE'), 'core', context_course::instance($course2->id)->id);
+        $taginstance = $DB->get_record('tag_instance', array('itemtype' => 'course', 'itemid' => $course2->id), '*', MUST_EXIST);
+        // Search by tagid.
+        $results = core_course_external::search_courses('tagid', $taginstance->tagid);
+        $results = external_api::clean_returnvalue(core_course_external::search_courses_returns(), $results);
+        $this->assertEquals($coursedata2['fullname'], $results['courses'][0]['fullname']);
+
+        // Search by block (use id=25 for news_items default block).
+        $results = core_course_external::search_courses('blocklist', 25);
+        $results = external_api::clean_returnvalue(core_course_external::search_courses_returns(), $results);
+        $this->assertEquals(2, $results['total']);
+
+    }
+
+    /**
      * Create a course with contents
      * @return array A list with the course object and course modules objects
      */
