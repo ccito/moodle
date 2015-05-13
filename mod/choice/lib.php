@@ -850,6 +850,45 @@ function choice_page_type_list($pagetype, $parentcontext, $currentcontext) {
 }
 
 /**
+ * Return my responses on a specific choice.
+ * @param object $choice
+ * @return array
+ */
+function choice_get_my_choice_response($choice) {
+    global $DB, $USER;
+    return $DB->get_records('choice_answers', array('choiceid' => $choice->id, 'userid' => $USER->id));
+}
+
+/**
+ * Return true if we are allowd to see choice results as student
+ * @param object $choice Choice
+ * @param rows|null $current my choice responses
+ * @param bool|null $choiceopen choice open
+ * @return bool True if we can see results, false if not.
+ */
+function choice_can_see_results($choice, $current = null, $choiceopen = null) {
+
+    if (is_null($choiceopen)) {
+        $timenow = time();
+        if ($choice->timeclose != 0 && $timenow > $choice->timeclose) {
+            $choiceopen = false;
+        } else {
+            $choiceopen = true;
+        }
+    }
+    if (is_null($current)) { 
+        $current = choice_get_my_choice_response($choice);
+    }
+
+    if ($choice->showresults == CHOICE_SHOWRESULTS_ALWAYS or
+       ($choice->showresults == CHOICE_SHOWRESULTS_AFTER_ANSWER and !empty($current)) or
+       ($choice->showresults == CHOICE_SHOWRESULTS_AFTER_CLOSE and !$choiceopen)) {
+        return true;
+    }
+    return false;
+}
+
+/**
  * Prints choice summaries on MyMoodle Page
  *
  * Prints choice name, due date and attempt information on
