@@ -425,7 +425,6 @@ class core_course_external extends external_api {
                 $exceptionparam->courseid = $course->id;
                 throw new moodle_exception('errorcoursecontextnotvalid', 'webservice', '', $exceptionparam);
             }
-            require_capability('moodle/course:view', $context);
 
             $courseinfo = array();
             $courseinfo['id'] = $course->id;
@@ -2145,7 +2144,7 @@ class core_course_external extends external_api {
      * @param $criteriavalue
      * @param $page
      * @param $perpage
-     * @return array courses ()
+     * @return array of course objects
      * @since Moodle 3.0
      * @throws moodle_exception
      */
@@ -2197,17 +2196,17 @@ class core_course_external extends external_api {
                     $file->get_filepath(), $file->get_filename())->out(false);
                 $files[] = array('filename' => $file->get_filename(), 'fileurl' => $fileurl);
             }
-            $contactusername = array();
+            $coursecontacts = array();
             foreach ($course->get_course_contacts() as $contact) {
                 $user = $contact['user'];
                 $usercontext = context_user::instance($user->id, IGNORE_MISSING);
                 if ($usercontext) {
                     $userpictureurl = moodle_url::make_webservice_pluginfile_url(
-                    $usercontext->id, 'user', 'icon', null, '/', 'f1')->out(false);
+                        $usercontext->id, 'user', 'icon', null, '/', 'f1')->out(false);
                 } else {
                     $userpictureurl = '';
                 }
-                $contactusername[] = array('userid' => $user->id,
+                $coursecontacts[] = array('userid' => $user->id,
                                            'username' => $contact['username'],
                                            'userpictureurl' => $userpictureurl);
             }
@@ -2223,14 +2222,14 @@ class core_course_external extends external_api {
             list($summary, $summaryformat) =
                 external_format_text($course->summary, $course->summaryformat, $coursecontext->id, 'course', 'summary', null);
             $coursereturns['id']                = $course->id;
-            $coursereturns['fullname']          = $course->fullname;
-            $coursereturns['shortname']         = $course->shortname;
+            $coursereturns['fullname']          = $course->get_fullname;
+            $coursereturns['shortname']         = $course->get_shortname;
             $coursereturns['categoryid']        = $course->category;
             $coursereturns['categoryname']      = $category->name;
             $coursereturns['summary']           = $summary;
             $coursereturns['summaryformat']     = $summaryformat;
             $coursereturns['overviewfiles']     = $files;
-            $coursereturns['contacts']          = $contactusername;
+            $coursereturns['contacts']          = $coursecontacts;
             $coursereturns['enrollmentmethods'] = $enroltypes;
             $results[] = $coursereturns;
         }
@@ -2270,7 +2269,7 @@ class core_course_external extends external_api {
                             'contacts' => new external_multiple_structure(
                                 new external_single_structure(
                                     array('userid' => new external_value(PARAM_INT, 'contact user id'),
-                                          'username'  => new external_value(PARAM_RAW, 'contact user fullname'),
+                                          'username'  => new external_value(PARAM_PLUGIN, 'contact user fullname'),
                                           'userpictureurl'  =>
                                               new external_value(PARAM_URL, 'contact user picture url', VALUE_OPTIONAL)
                                 )),
