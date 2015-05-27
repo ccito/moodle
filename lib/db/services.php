@@ -1055,6 +1055,15 @@ $functions = array(
         'type'          => 'read',
         'capabilities'  => 'moodle/rating:view'
     ),
+
+    'mod_choice_get_choice_options' => array(
+        'classname'     => 'mod_choice_external',
+        'methodname'    => 'get_choice_options',
+        'description'   => 'Retrieve options for a specific choice.',
+        'type'          => 'read',
+        'capabilities'  => 'mod/choice:choose'
+    ),
+
 );
 
 $services = array(
@@ -1127,6 +1136,7 @@ $services = array(
             'core_user_view_user_profile',
             'gradereport_user_view_grade_report',
             'core_rating_get_item_ratings',
+            'mod_choice_get_choice_options'
             ),
         'enabled' => 0,
         'restrictedusers' => 0,
