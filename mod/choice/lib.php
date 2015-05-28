@@ -850,6 +850,16 @@ function choice_page_type_list($pagetype, $parentcontext, $currentcontext) {
 }
 
 /**
+ * Return my responses on a specific choice.
+ * @param object $choice
+ * @return array
+ */
+function choice_get_my_choice_response($choice) {
+    global $DB, $USER;
+    return $DB->get_records('choice_answers', array('choiceid' => $choice->id, 'userid' => $USER->id));
+}
+
+/**
  * Prints choice summaries on MyMoodle Page
  *
  * Prints choice name, due date and attempt information on
@@ -920,4 +930,13 @@ function choice_print_overview($courses, &$htmlarray) {
         }
     }
     return;
+}
+
+/**
+ * Return my responses on a specific choice.
+ * @param object $choice
+ */
+function my_own_choice_response($choice) {
+    global $DB, $USER;
+    return $DB->get_records('choice_answers', array('choiceid' => $choice->id, 'userid' => $USER->id));
 }
