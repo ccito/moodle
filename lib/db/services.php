@@ -1055,6 +1055,15 @@ $functions = array(
         'type'          => 'read',
         'capabilities'  => 'moodle/rating:view'
     ),
+
+    'mod_book_get_books_by_courses' => array(
+        'classname'     => 'mod_book_external',
+        'methodname'    => 'get_books_by_courses',
+        'description'   => 'Retrieve books by serveral courses.',
+        'type'          => 'read',
+        'capabilities'  => ''
+    ),
+
 );
 
 $services = array(
@@ -1128,6 +1137,7 @@ $services = array(
             'gradereport_user_view_grade_report',
             'core_rating_get_item_ratings',
             'mod_url_view_url',
+            'mod_book_get_books_by_courses',
             ),
         'enabled' => 0,
         'restrictedusers' => 0,
