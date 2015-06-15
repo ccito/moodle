@@ -1055,6 +1055,14 @@ $functions = array(
         'type'          => 'read',
         'capabilities'  => 'moodle/rating:view'
     ),
+
+    'mod_chat_get_chats_by_courses' => array(
+        'classname'     => 'mod_chat_external',
+        'methodname'    => 'get_chats_by_courses',
+        'description'   => 'Retrieve a list of chats from several courses.',
+        'type'          => 'read',
+        'capabilities'  => ''
+    ),
 );
 
 $services = array(
@@ -1128,6 +1136,7 @@ $services = array(
             'gradereport_user_view_grade_report',
             'core_rating_get_item_ratings',
             'mod_url_view_url',
+            'mod_chat_get_chats_by_courses',
             ),
         'enabled' => 0,
         'restrictedusers' => 0,
