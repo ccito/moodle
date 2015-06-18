@@ -1064,6 +1064,14 @@ $functions = array(
         'type'          => 'read',
         'capabilities'  => 'moodle/rating:view'
     ),
+
+    'mod_folder_get_folders_by_courses' => array(
+        'classname'     => 'mod_folder_external',
+        'methodname'    => 'get_folders_by_courses',
+        'description'   => 'Retrieve a list of folders from several courses.',
+        'type'          => 'read',
+        'capabilities'  => 'mod/folder:view'
+    ),
 );
 
 $services = array(
@@ -1139,6 +1147,7 @@ $services = array(
             'mod_url_view_url',
             'core_user_get_users_by_field',
             'core_user_add_user_private_files',
+            'mod_folder_get_folders_by_courses',
             ),
         'enabled' => 0,
         'restrictedusers' => 0,
