@@ -1055,6 +1055,14 @@ $functions = array(
         'type'          => 'read',
         'capabilities'  => 'moodle/rating:view'
     ),
+
+    'mod_lti_get_ltis_by_courses' => array(
+        'classname'     => 'mod_lti_external',
+        'methodname'    => 'get_ltis_by_courses',
+        'description'   => 'Retrieve ltis by several courses',
+        'type'          => 'read',
+        'capabilities'  => 'moodle/lti:view'
+    ),
 );
 
 $services = array(
@@ -1129,6 +1137,7 @@ $services = array(
             'core_rating_get_item_ratings',
             'mod_url_view_url',
             'core_user_get_users_by_field',
+            'mod_lti_get_ltis_by_courses',
             ),
         'enabled' => 0,
         'restrictedusers' => 0,
