@@ -1064,6 +1064,13 @@ $functions = array(
         'type'          => 'read',
         'capabilities'  => 'moodle/rating:view'
     ),
+    'mod_page_get_pages_by_courses' => array(
+        'classname'     => 'mod_page_external',
+        'methodname'    => 'get_pages_by_courses',
+        'description'   => 'Retrieve pages by several courses.',
+        'type'          => 'read',
+        'capabilities'  => 'moodle/page:view'
+    ),
 );
 
 $services = array(
@@ -1139,6 +1146,7 @@ $services = array(
             'mod_url_view_url',
             'core_user_get_users_by_field',
             'core_user_add_user_private_files',
+            'mod_page_get_pages_by_courses',
             ),
         'enabled' => 0,
         'restrictedusers' => 0,
