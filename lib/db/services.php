@@ -1064,6 +1064,14 @@ $functions = array(
         'type'          => 'read',
         'capabilities'  => 'moodle/rating:view'
     ),
+
+    'mod_resource_get_resources_by_courses' => array(
+        'classname'     => 'mod_resource_external',
+        'methodname'    => 'get_resources_by_courses',
+        'description'   => 'Retrieve resources by several courses.',
+        'type'          => 'read',
+        'capabilities'  => 'moodle/resource:view'
+    ),
 );
 
 $services = array(
@@ -1139,6 +1147,7 @@ $services = array(
             'mod_url_view_url',
             'core_user_get_users_by_field',
             'core_user_add_user_private_files',
+            'mod_resource_get_resources_by_courses',
             ),
         'enabled' => 0,
         'restrictedusers' => 0,
