@@ -1064,6 +1064,15 @@ $functions = array(
         'type'          => 'read',
         'capabilities'  => 'moodle/rating:view'
     ),
+
+    'mod_url_get_urls_by_courses' => array(
+        'classname'     => 'mod_url_external',
+        'methodname'    => 'get_urls_by_courses',
+        'description'   => 'Retrieve URLs by several courses.',
+        'type'          => 'read',
+        'capabilities'  => 'moodle/url:view'
+    ),
+
 );
 
 $services = array(
@@ -1139,6 +1148,7 @@ $services = array(
             'mod_url_view_url',
             'core_user_get_users_by_field',
             'core_user_add_user_private_files',
+            'mod_url_get_urls_by_courses',
             ),
         'enabled' => 0,
         'restrictedusers' => 0,

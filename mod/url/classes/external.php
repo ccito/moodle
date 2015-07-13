@@ -104,4 +104,147 @@ class mod_url_external extends external_api {
         );
     }
 
+    /**
+     * Describes the parameters for get_urls_by_courses.
+     *
+     * @return external_external_function_parameters
+     * @since Moodle 3.0
+     */
+    public static function get_urls_by_courses_parameters() {
+        return new external_function_parameters (
+            array(
+                'courseids' => new external_multiple_structure(
+                    new external_value(PARAM_INT, 'course id'),
+                    'Array of course ids', VALUE_DEFAULT, array()
+                ),
+            )
+        );
+    }
+
+    /**
+     * Returns a list of urls in a provided list of courses,
+     * if no list is provided all urls that the user can view will be returned.
+     *
+     * @param array $courseids the course ids
+     * @return array of urls details
+     * @since Moodle 3.0
+     */
+    public static function get_urls_by_courses($courseids = array()) {
+        global $CFG;
+        $params = self::validate_parameters(self::get_urls_by_courses_parameters(), array('courseids' => $courseids));
+        $warnings = array();
+        if (!empty($params['courseids'])) {
+            $courses = array();
+            $courseids = $params['courseids'];
+        } else {
+            $courses = enrol_get_my_courses();
+            $courseids = array_keys($courses);
+        }
+        // Array to store the urls to return.
+        $arrurls = array();
+        // Ensure there are courseids to loop through.
+        if (!empty($courseids)) {
+            // Array of the courses we are going to retrieve the urls from.
+            $arraycourses = array();
+            // Go through the courseids.
+            foreach ($courseids as $cid) {
+                // Check the user can function in this context.
+                try {
+                    $context = context_course::instance($cid);
+                    self::validate_context($context);
+                    if (has_capability('mod/url:view', $context)) {
+                        // Check if this course was already loaded (by enrol_get_my_courses).
+                        if (!isset($courses[$cid])) {
+                            $courses[$cid] = get_course($cid);
+                        }
+                        $arraycourses[$cid] = $courses[$cid];
+                    } else {
+                        $warnings[] = array(
+                            'item' => 'course',
+                            'itemid' => $cid,
+                            'warningcode' => '2',
+                            'message' => get_string('missingrequiredcapability', 'webservice', 'mod/url:view')
+                        );
+                    }
+                } catch (Exception $e) {
+                    $warnings[] = array(
+                        'item' => 'course',
+                        'itemid' => $cid,
+                        'warningcode' => '1',
+                        'message' => 'No access rights in course context '.$e->getMessage()
+                    );
+                }
+            }
+            // Get the urls in this course, this function checks users visibility permissions.
+            // We can avoid then additional validate_context calls.
+            $urls = get_all_instances_in_courses("url", $arraycourses);
+            foreach ($urls as $url) {
+                $urlcontext = context_module::instance($url->coursemodule);
+                // Entry to return.
+                $urldetails = array();
+                // First, we return information that any user can see in the web interface.
+                $urldetails['id'] = $url->id;
+                $urldetails['coursemodule']      = $url->coursemodule;
+                $urldetails['course']            = $url->course;
+                $urldetails['name']              = $url->name;
+                // Format intro.
+                list($urldetails['intro'], $urldetails['introformat']) =
+                    external_format_text($url->intro, $url->introformat,
+                                            $urlcontext->id, 'mod_url', 'intro', null);
+                $urldetails['externalurl']    = $url->externalurl;
+                $urldetails['display']        = $url->display;
+                $urldetails['displayoptions'] = $url->displayoptions;
+                $urldetails['parameters']     = $url->parameters;
+                if (has_capability('moodle/course:manageactivities', $urlcontext)) {
+                    $urldetails['section']        = $url->section;
+                    $urldetails['visible']        = $url->visible;
+                    $urldetails['timemodified']   = $url->timemodified;
+                    $urldetails['groupmode']      = $url->groupmode;
+                    $urldetails['groupingid']     = $url->groupingid;
+                }
+
+                $arrurls[] = $urldetails;
+            }
+        }
+        $result = array();
+        $result['urls'] = $arrurls;
+        $result['warnings'] = $warnings;
+        return $result;
+    }
+
+    /**
+     * Describes the get_urls_by_courses return value.
+     *
+     * @return external_single_structure
+     * @since Moodle 3.0
+     */
+    public static function get_urls_by_courses_returns() {
+        return new external_single_structure(
+            array(
+                'urls' => new external_multiple_structure(
+                    new external_single_structure(
+                        array(
+                            'id' => new external_value(PARAM_INT, 'URL id'),
+                            'coursemodule' => new external_value(PARAM_INT, 'Course module id'),
+                            'course' => new external_value(PARAM_TEXT, 'Course id'),
+                            'name' => new external_value(PARAM_TEXT, 'URL name'),
+                            'intro' => new external_value(PARAM_RAW, 'The URL intro'),
+                            'introformat' => new external_format_value('intro'),
+                            'externalurl' => new external_value(PARAM_URL, 'externalurl'),
+                            'display' => new external_value(PARAM_INT, 'display'),
+                            'displayoptions' => new external_value(PARAM_RAW, 'display options'),
+                            'parameters' => new external_value(PARAM_RAW, 'parameters'),
+                            'section' => new external_value(PARAM_INT, 'course section id', VALUE_OPTIONAL),
+                            'visible' => new external_value(PARAM_BOOL, 'visible', VALUE_OPTIONAL),
+                            'timemodified' => new external_value(PARAM_RAW, 'time of last modification', VALUE_OPTIONAL),
+                            'groupmode' => new external_value(PARAM_INT, 'group mode', VALUE_OPTIONAL),
+                            'groupingid' => new external_value(PARAM_INT, 'group id', VALUE_OPTIONAL),
+                        ), 'URLs'
+                    )
+                ),
+                'warnings' => new external_warnings(),
+            )
+        );
+    }
+
 }
