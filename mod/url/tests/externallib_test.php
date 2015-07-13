@@ -108,4 +108,61 @@ class mod_url_external_testcase extends externallib_advanced_testcase {
         }
 
     }
+
+    /**
+     * Test get_urls_by_courses
+     */
+    public function test_get_urls_by_courses() {
+        global $DB, $USER;
+        $this->resetAfterTest(true);
+        $course1 = self::getDataGenerator()->create_course();
+        $urloptions1 = array(
+                              'course' => $course1->id,
+                              'name' => 'First URL'
+                             );
+        $url1 = self::getDataGenerator()->create_module('url', $urloptions1);
+        $course2 = self::getDataGenerator()->create_course();
+        $urloptions2 = array(
+                              'course' => $course2->id,
+                              'name' => 'Second URL'
+                             );
+        $url2 = self::getDataGenerator()->create_module('url', $urloptions2);
+        $student1 = $this->getDataGenerator()->create_user();
+        $studentrole = $DB->get_record('role', array('shortname' => 'student'));
+        // Enroll Student1 in Course1.
+        self::getDataGenerator()->enrol_user($student1->id,  $course1->id, $studentrole->id);
+        $this->setUser($student1);
+        $urls = mod_url_external::get_urls_by_courses(array());
+        // We need to execute the return values cleaning process to simulate the web service server.
+        $urls = external_api::clean_returnvalue(mod_url_external::get_urls_by_courses_returns(), $urls);
+        $this->assertCount(1, $urls['urls']);
+        $this->assertEquals('First URL', $urls['urls'][0]['name']);
+        // As Student you cannot see some URL properties like 'section'.
+        $this->assertFalse(isset($urls['urls'][0]['section']));
+        // Student1 is not enrolled in this Course.
+        // The webservice will give a warning!
+        $urls = mod_url_external::get_urls_by_courses(array($course2->id));
+        // We need to execute the return values cleaning process to simulate the web service server.
+        $urls = external_api::clean_returnvalue(mod_url_external::get_urls_by_courses_returns(), $urls);
+        $this->assertCount(0, $urls['urls']);
+        $this->assertEquals(1, $urls['warnings'][0]['warningcode']);
+        // Now as admin.
+        $this->setAdminUser();
+        // As Admin we can see this url.
+        $urls = mod_url_external::get_urls_by_courses(array($course2->id));
+        // We need to execute the return values cleaning process to simulate the web service server.
+        $urls = external_api::clean_returnvalue(mod_url_external::get_urls_by_courses_returns(), $urls);
+        $this->assertCount(1, $urls['urls']);
+        $this->assertEquals('Second URL', $urls['urls'][0]['name']);
+        // As an Admin you can see some urls properties like 'section'.
+        $this->assertEquals(0, $urls['urls'][0]['section']);
+        $contextcourse1 = context_course::instance($course1->id);
+        // Prohibit capability = mod/url:view on Course1 for students.
+        assign_capability('mod/url:view', CAP_PROHIBIT, $studentrole->id, $contextcourse1->id);
+        accesslib_clear_all_caches_for_unit_testing();
+        $this->setUser($student1);
+        $urls = mod_url_external::get_urls_by_courses(array($course1->id));
+        $urls = external_api::clean_returnvalue(mod_url_external::get_urls_by_courses_returns(), $urls);
+        $this->assertEquals(2, $urls['warnings'][0]['warningcode']);
+    }
 }
